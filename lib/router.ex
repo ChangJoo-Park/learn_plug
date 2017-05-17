@@ -12,6 +12,10 @@ defmodule LearnPlug.Router do
     send_resp(conn, 200, "Hello Elixir!")
   end
 
+  get "/hello/:name" do
+    send_resp(conn, 200, "Hello #{name}!")
+  end
+
   match _ do
     send_resp(conn, 404, "Oops!")
   end

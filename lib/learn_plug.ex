@@ -1,18 +1,15 @@
 defmodule LearnPlug do
-  @moduledoc """
-  Documentation for LearnPlug.
-  """
+  use Application
+  require Logger
 
-  @doc """
-  Hello world.
+  def start(_type, _args) do
+    children = [
+      Plug.Adapters.Cowboy.child_spec(:http, LearnPlug.Router, [], port: 4000)
+    ]
 
-  ## Examples
+    Logger.info "Started application http://localhost:4000"
 
-      iex> LearnPlug.hello
-      :world
-
-  """
-  def hello do
-    :world
+    Supervisor.start_link(children, strategy: :one_for_one)
   end
+
 end
