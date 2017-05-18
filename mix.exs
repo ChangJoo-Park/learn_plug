@@ -16,7 +16,7 @@ defmodule LearnPlug.Mixfile do
   def application do
     # Specify extra applications you'll use from Erlang/Elixir
     [
-      extra_applications: [:logger, :cowboy, :plug],
+      extra_applications: [:logger, :cowboy, :plug, :poison],
       mod: { LearnPlug, [] }
     ]
   end
@@ -33,7 +33,8 @@ defmodule LearnPlug.Mixfile do
   defp deps do
     [
       {:plug, "~> 1.3"},
-      {:cowboy, "~> 1.0"}
+      {:cowboy, "~> 1.0"},
+      {:poison, "~> 3.0"}
     ]
   end
 end

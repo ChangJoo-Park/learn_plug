@@ -1,6 +1,5 @@
 defmodule LearnPlug.Router do
   use Plug.Router
-  alias LearnPlug.HelloRoutes
 
   plug :match
   plug :dispatch
@@ -10,8 +9,9 @@ defmodule LearnPlug.Router do
     send_resp(conn, 200, "Welcome")
   end
 
-  forward "/hello", to: HelloRoutes
-
+  forward "/hello", to: LearnPlug.HelloRoutes
+  forward "/books", to: LearnPlug.BookRoutes
+  
   match _ do
     send_resp(conn, 404, "Oops!")
   end

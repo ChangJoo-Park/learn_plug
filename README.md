@@ -157,3 +157,96 @@ end
 ```
 
 지금까지 작성한 시나리오 모두 동일하게 작동합니다.
+
+
+**새로운 API 생성**
+
+endpoint는 **/books** 입니다. 사용자가 http://localhost:4000 에 요청하면 책과 관련된 내용을 반환합니다. 우선 라우트를 만듭니다.
+
+```elixir
+# router.ex
+...
+forward "/hello", to: LearnPlug.HelloRoutes
+forward "/books", to: LearnPlug.BookRoutes
+...
+```
+
+위 예제에서는 alias를 이용했지만 이번에는 모듈 이름을 그대로 적었습니다.
+
+```elixir
+#routes/book_routes.ex
+defmodule LearnPlug.BookRoutes do
+  use Plug.Router
+
+  plug :match
+  plug :dispatch
+
+  get "/" do
+    send_resp(conn, 200, "Book")
+  end
+end
+```
+
+`http://localhost:4000/books` 로 접속하면 Book 이라는 문자를 볼 수 있습니다.
+
+
+elixir는 파이프를 제공하여 이전 요청의 결과를 다음 함수로 전달할 수 있습니다. 위에서 만든 `get "/" do ~ end` 부분을 아래와 같이 변경합니다.
+
+```elixir
+get "/" do
+  conn
+  |> send_resp(200, "Book")
+end
+```
+send_resp의 첫번째 파라미터였던 conn을 분리했습니다.
+
+새로운 엔드포인트인 "/books/:id"를 만들어 봅니다. 아직 데이터베이스를 사용하지 않기 때문에 임의로 만듭니다.
+
+```elixir
+get "/:id" do
+  conn
+  |> send_resp(200, "Book")
+end
+```
+
+**JSON 응답**
+
+Plug 앱을 JSON 서버로 사용할 수도 있습니다. 사용자의 요청을 받으면 해당하는 결과를 JSON 형식으로 반환해봅니다. JSON을 이용하기 위해 **poison**모듈을 추가합니다.
+
+```elixir
+#mix.exs
+defp deps do
+  [
+    {:plug, "~> 1.3"},
+    {:cowboy, "~> 1.0"},
+    {:poison, "~> 3.0"}
+  ]
+end
+```
+
+Poison을 사용하려면 `application`에 추가해야합니다.
+```elixir
+def application do
+  [
+    extra_applications: [:logger, :cowboy, :plug, :poison],
+    mod: { LearnPlug, [] }
+  ]
+end
+```
+
+`:poison`을 추가하여 이제 Poison 모듈을 사용할 수 있습니다.
+
+Poison을 사용해 위에서 만든 `/:id` 응답의 내용을 다음과 같이 변경합니다.
+
+```elixir
+#book_routes.ex
+get "/:id" do
+  conn
+  |> put_resp_content_type("application/json")
+  |> send_resp(200, Poison.encode!(%{
+    :name => "The Interpretation of Dreams",
+    :author => "Sigmund Freud",
+    :publishedAt => "1900"
+  }))
+end
+```
