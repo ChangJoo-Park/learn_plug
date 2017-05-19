@@ -374,4 +374,83 @@ end
 $ mix ecto.migrate
 ```
 
-`create table books` 등의 명령어가 나오면 성공적으로 만들어진 것입니다.
+성공하면 `create table books` 등의 명령어가 나옵니다.
+
+**첫번째 스키마**
+
+Ecto는 Book 테이블에서 사용할 스키마가 필요합니다.
+
+```elixir
+defmodule LearnPlug.Book do
+  use Ecto.Schema
+
+  schema "books" do
+    field :name, :string
+    field :author, :string
+    field :language, :string
+    field :isbn, :string
+
+    timestamps()
+  end
+end
+```
+
+테이블에 정의했던 내용과 동일한 필드를 가지도록 만들었습니다. 터미널에서 첫번째 데이터를 추가합니다.
+
+```bash
+$ iex -S mix # 앱 실행
+```
+
+```elixir
+iex(1)> alias LearnPlug.Repo # Repo 알리아스 선언
+iex(2)> alias LearnPlug.Book # Book 알리아스 선언
+iex(3)> book = %Book{ author: "Siegmund Freud", language: "German", name: "Die Traumdeutung", isbn: "1234"} # Book 데이터 정의
+iex(4)> { :ok, book } = Repo.insert book # Repo에 삽입
+iex(5)> Repo.all(Book)
+```
+위 순서대로 실행하면 저장소에 첫번째 책을 추가합니다.
+
+**JSON으로 반환하기**
+
+BookRoutes의 `get "/"`로 접속하면 전체 책 내용을 반환하도록 만들어봅니다.
+JSON 형식으로 데이터를 반환하려면 우선 스키마 모델이 Poison 인코더를 사용한다고 지정해야합니다. `/models/book.ex` 파일을 수정합니다.
+
+```elixir
+defmodule LearnPlug.Book do
+  use Ecto.Schema
+
+  @derive { Poison.Encoder, except: [:__meta__] }
+  schema "books" do
+    field :name, :string
+    field :author, :string
+    field :language, :string
+    field :isbn, :string
+
+    timestamps()
+  end
+end
+```
+
+그리고 `book_routes.ex`의 `get "/"`를 수정합니다. `get "/:id"`와 유사합니다.
+
+```elixir
+get "/" do
+  books = Repo.all(Book)
+  conn
+  |> put_resp_content_type("application/json")
+  |> send_resp(200, Poison.encode!(books))
+end
+```
+
+`get "/:id"` 라우트도 변경합니다.
+
+```elixir
+get "/:id" do
+  book = Repo.get(Book, id)
+  conn
+  |> put_resp_content_type("application/json")
+  |> send_resp(200, Poison.encode!(book))
+end
+```
+
+`localhost:4000/books/1` 로 접속하면 위에서 추가한 Book 객체를 받을 수 있습니다.
