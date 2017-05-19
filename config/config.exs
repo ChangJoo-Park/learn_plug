@@ -2,6 +2,16 @@
 # and its dependencies with the aid of the Mix.Config module.
 use Mix.Config
 
+config :learn_plug, LearnPlug.Repo,
+  adapter: Ecto.Adapters.Postgres,
+  database: "learn_plug_repo",
+  username: "postgres",
+  password: "postgres",
+  hostname: "localhost",
+  pool_size: 10
+
+config :learn_plug, :ecto_repos, [LearnPlug.Repo]
+
 # This configuration is loaded before any dependency and is restricted
 # to this project. If another project depends on this project, this
 # file won't be loaded nor affect the parent project. For this reason,
