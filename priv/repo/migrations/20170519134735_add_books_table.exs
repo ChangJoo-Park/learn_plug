@@ -8,7 +8,7 @@ defmodule LearnPlug.Repo.Migrations.AddBooksTable do
       add :language, :string
       add :isbn, :string
 
-      timestamps()
+      timestamps([:autogenerate])
     end
   end
 end
