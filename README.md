@@ -250,3 +250,128 @@ get "/:id" do
   }))
 end
 ```
+
+**Ecto 설치**
+
+Ecto는 Elixir 환경에서 데이터베이스에 접속하고, 조작할 수 있도록 만들어진 모듈입니다. 여기서는 **postgresql** 데이터베이스를 이용합니다.
+
+Ecto와 Postgresql을 사용하려면 `postgrex` 모듈도 함께 필요합니다. 두가지 모듈을 앱 의존성에 추가합니다.
+
+```elixir
+defp deps do
+  [
+    {:plug, "~> 1.3"},
+    {:cowboy, "~> 1.0"},
+    {:poison, "~> 3.0"},
+    {:ecto, "~> 2.1.4"},
+    {:postgrex, ">= 0.13.2"}
+  ]
+end
+```
+
+그리고 앱에서 사용하도록 지정합니다.
+
+```elixir
+def application do
+  # Specify extra applications you'll use from Erlang/Elixir
+  [
+    extra_applications: [:logger, :cowboy, :plug, :poison, :ecto, :postgrex],
+    mod: { LearnPlug, [] }
+  ]
+end
+```
+
+터미널에서 다음 명령어를 실행하여 의존성 설치를 합니다.
+
+```elixir
+$ mix deps.get
+```
+
+Ecto는 데이터베이스를 감싸는 저장소(Repo)를 사용합니다. 이를 위해 `mix ecto.gen.repo` 명령어를 실행합니다.
+
+아무런 설정을 하지 않으면 경고 메시지가 출력됩니다. `config/config.exs` 파일을 열어 설정 내용을 적어줍니다.
+
+```elixir
+# config.exs
+config :learn_plug, :ecto_repos, [LearnPlug.Repo]
+```
+
+다시 터미널에서 실행하면 `config.exs` 파일에 설정이 추가됩니다. Postgresql 설정을 변경하지 않았다면 아래와 같이 수정합니다.
+
+
+```elixir
+config :learn_plug, LearnPlug.Repo,
+  adapter: Ecto.Adapters.Postgres,
+  database: "learn_plug_repo",
+  username: "postgres",
+  password: "postgres",
+  hostname: "localhost"
+```
+
+그리고 `lib/learn_plug` 디렉터리에 repo.ex 파일이 만들어진 것을 확인할 수 있습니다.
+
+Ecto를 사용하기 위해서 `learn_plug.ex` 파일에 **Supervisor** 설정을 해야합니다. `def start` 메소드를 수정합니다.
+
+```elixir
+def start(_type, _args) do
+  import Supervisor.Spec
+
+  children = [
+    Plug.Adapters.Cowboy.child_spec(:http, LearnPlug.Router, [], port: 4000),
+    supervisor(LearnPlug.Repo, [])
+  ]
+
+  Logger.info "Started application http://localhost:4000"
+
+  opts = [strategy: :one_for_one, name: LearnPlug.Supervisor]
+  Supervisor.start_link(children, opts)
+end
+```
+
+**Ecto + Mix 태스크 목록**
+
+```elixir
+mix ecto.create         # 저장소에 공간을 생성합니다
+mix ecto.drop           # 저장소의 공간을 삭제합니다
+mix ecto.gen.migration  # 저장소의 새로운 마이그레이션을 생성합니다
+mix ecto.gen.repo       # 새로운 저장소를 생성합니다
+mix ecto.migrate        # 저장소의 마이그레이션을 실행합니다
+mix ecto.rollback       # 저장소의 마이그레이션을 롤백합니다
+```
+
+데이터베이스를 만들기위해 `mix ecto.create`를 실행합니다. 정상적으로 설정이 되어 있으면 저장소가 만들어졌다는 메시지가 출력됩니다.
+
+**첫번째 마이그레이션**
+
+mix 태스크를 이용해 첫번째 태스크를 만듭니다. 마이그레이션 이름은 `books` 입니다. 터미널에서 다음과 같이 입력합니다.
+
+```terminal
+$ mix ecto.gen.migration add_books_table
+```
+
+`priv` 디렉터리에 `repo/migrations` 디렉터리와 마이그레이션 파일이 만들어졌습니다. **books**테이블 마이그레이션 설정을 합니다.
+
+```
+defmodule LearnPlug.Repo.Migrations.AddBooksTable do
+  use Ecto.Migration
+
+  def change do
+    create table(:books) do
+      add :name, :string
+      add :author, :string
+      add :language, :string
+      add :isbn, :string
+
+      timestamps()
+    end
+  end
+end
+```
+
+터미널에서 위 마이그레이션을 데이터베이스에 반영하기 위해 mix 태스크를 이용합니다.
+
+```elixir
+$ mix ecto.migrate
+```
+
+`create table books` 등의 명령어가 나오면 성공적으로 만들어진 것입니다.
